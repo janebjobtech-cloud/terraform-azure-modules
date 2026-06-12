@@ -1,0 +1,71 @@
+name: Publish Module Version
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Vault Token via OIDC
+        id: vault-auth
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ secrets.VAULT_ADDR }}
+          namespace: ${{ secrets.VAULT_NAMESPACE }}
+          method: jwt
+          role: github-actions-azure
+          exportToken: true
+
+      - name: Get Dynamic Azure Credentials from Vault
+        id: azure-creds
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ secrets.VAULT_ADDR }}
+          namespace: ${{ secrets.VAULT_NAMESPACE }}
+          token: ${{ env.VAULT_TOKEN }}
+          secrets: |
+            azure/creds/github-actions-role client_id | AZURE_CLIENT_ID ;
+            azure/creds/github-actions-role client_secret | AZURE_CLIENT_SECRET ;
+            azure/creds/github-actions-role subscription_id | AZURE_SUBSCRIPTION_ID ;
+            azure/creds/github-actions-role tenant_id | AZURE_TENANT_ID
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Validate all modules
+        run: |
+          for module in modules/*/; do
+            echo "Validating $module..."
+            cd $module
+            terraform init -backend=false
+            terraform validate
+            cd -
+          done
+        env:
+          ARM_CLIENT_ID: ${{ env.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ env.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ env.AZURE_TENANT_ID }}
+
+      - name: Publish module version to Terraform Cloud
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          MODULE_NAME=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
+          curl -s \
+            --header "Authorization: Bearer ${{ secrets.TF_API_TOKEN }}" \
+            --header "Content-Type: application/vnd.api+json" \
+            --data "{\"data\":{\"type\":\"registry-module-versions\",\"attributes\":{\"version\":\"${TAG#v}\"}}}" \
+            https://app.terraform.io/api/v2/organizations/JaneBuro_JobTech/registry-modules/private/JaneBuro_JobTech/azure-modules/azurerm/versions
+          echo "Published version ${TAG} to Terraform Cloud"

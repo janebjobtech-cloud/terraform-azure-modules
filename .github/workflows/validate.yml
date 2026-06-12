@@ -1,0 +1,32 @@
+name: Validate Modules
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [vnet, acr, aks]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Format Check — ${{ matrix.module }}
+        working-directory: modules/${{ matrix.module }}
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init — ${{ matrix.module }}
+        working-directory: modules/${{ matrix.module }}
+        run: terraform init
+
+      - name: Terraform Validate — ${{ matrix.module }}
+        working-directory: modules/${{ matrix.module }}
+        run: terraform validate
