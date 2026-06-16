@@ -24,6 +24,7 @@ jobs:
           namespace: ${{ secrets.VAULT_NAMESPACE }}
           method: jwt
           role: github-actions-azure
+          jwtAudience: "https://vault.hashicorp.com"
           exportToken: true
 
       - name: Get Dynamic Azure Credentials from Vault
