@@ -29,14 +29,15 @@ resource "vault_policy" "github_actions_azure" {
 }
 
 resource "vault_jwt_auth_backend_role" "github_actions_azure" {
-  backend        = vault_jwt_auth_backend.github_actions.path
-  role_name      = "github-actions-azure"
-  role_type      = "jwt"
-  token_policies = [vault_policy.github_actions_azure.name]
-  token_ttl      = 3600
-  bound_audiences = ["https://vault.hashicorp.com"]
+  backend           = vault_jwt_auth_backend.github_actions.path
+  role_name         = "github-actions-azure"
+  role_type         = "jwt"
+  token_policies    = [vault_policy.github_actions_azure.name]
+  token_ttl         = 3600
+  bound_audiences   = ["https://vault.hashicorp.com"]
+  bound_claims_type = "glob"
   bound_claims = {
-    sub = "repo:janebjobtech-cloud/terraform-azure-modules:ref:refs/heads/master"
+    sub = "repo:janebjobtech-cloud/terraform-azure-modules:*"
   }
   user_claim = "sub"
 }
