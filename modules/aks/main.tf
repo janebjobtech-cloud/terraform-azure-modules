@@ -7,13 +7,13 @@ resource "azurerm_kubernetes_cluster" "this" {
   tags                = var.tags
 
   default_node_pool {
-    name                = "default"
-    vm_size             = var.node_vm_size
-    vnet_subnet_id      = var.subnet_id
-    enable_auto_scaling = var.enable_auto_scaling
-    node_count          = var.enable_auto_scaling ? null : var.node_count
-    min_count           = var.enable_auto_scaling ? var.min_count : null
-    max_count           = var.enable_auto_scaling ? var.max_count : null
+    name                 = "default"
+    vm_size              = var.node_vm_size
+    vnet_subnet_id       = var.subnet_id
+    auto_scaling_enabled = var.enable_auto_scaling
+    node_count           = var.enable_auto_scaling ? null : var.node_count
+    min_count            = var.enable_auto_scaling ? var.min_count : null
+    max_count            = var.enable_auto_scaling ? var.max_count : null
   }
 
   identity {
@@ -26,7 +26,6 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 
   azure_active_directory_role_based_access_control {
-    managed          = true
     azure_rbac_enabled = true
   }
 
