@@ -59,3 +59,8 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+variable "tenant_id" {
+  description = "Azure AD tenant ID for RBAC integration."
+  type        = string
+  default     = null
+}
