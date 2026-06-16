@@ -34,11 +34,12 @@ jobs:
           url: ${{ secrets.VAULT_ADDR }}
           namespace: ${{ secrets.VAULT_NAMESPACE }}
           token: ${{ env.VAULT_TOKEN }}
-    secrets:   |
+          secrets: |
             azure/creds/github-actions-role client_id | AZURE_CLIENT_ID ;
             azure/creds/github-actions-role client_secret | AZURE_CLIENT_SECRET ;
             azure/config subscription_id | AZURE_SUBSCRIPTION_ID ;
             azure/config tenant_id | AZURE_TENANT_ID
+
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.7.0"
